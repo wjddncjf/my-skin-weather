@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="오늘의 날씨와 내 피부, 내 화장대를 한 곳에서.">
+  <title>MY SKIN WEATHER · 오늘의 피부 날씨</title>
+  <link rel="stylesheet" href="./styles.css?view=functional-care">
+</head>
+<body>
+  <main id="file-help" class="card" hidden>
+    <h1>MY SKIN WEATHER 실행하기</h1>
+    <p>프로젝트 폴더의 <strong>실행.command</strong>를 열면 로컬 서버와 브라우저가 시작됩니다.</p>
+    <p>서버가 이미 켜져 있으면 <a id="open-local-app" href="http://127.0.0.1:8000/#shelf">화장대 열기</a>를 누르세요.</p>
+    <p class="subtitle">터미널에서 직접 실행할 때는 프로젝트 폴더에서 아래 명령을 사용하세요.</p>
+    <pre><code>python3 -m http.server 8000 --bind 127.0.0.1 --directory dist</code></pre>
+  </main>
+  <p id="app-start-error" class="card caution" role="alert" hidden>앱을 불러오지 못했어요. 페이지를 새로고침하거나 로컬 서버를 확인해 주세요.</p>
+  <main id="dashboard" hidden>
+    <header class="masthead">
+      <a class="wordmark" href="#weather">MY SKIN<span> / </span>WEATHER</a>
+      <nav aria-label="빠른 이동"><a href="#skin">피부</a><a href="#shelf">화장대</a><a href="#journal">기록</a></nav>
+    </header>
+    <section id="weather" class="hero" aria-labelledby="weather-title">
+      <div class="topline">
+        <p class="eyebrow">01 / DAILY CONDITIONS</p>
+        <label class="city-label">공개 지역 <select id="city"></select></label>
+      </div>
+      <h1 id="weather-title">오늘의 피부 날씨</h1>
+      <p class="subtitle">오늘의 날씨를 읽고, 내 피부에 맞는 루틴을 고르세요.</p>
+      <div class="metrics">
+        <div><h2>현재 상대습도</h2><p id="humidity" class="reading">—</p><small id="humidity-state"></small></div>
+        <div><h2>자외선 지수</h2><p id="uv" class="reading">—</p><small id="uv-state"></small></div>
+        <div><h2>현재 기온</h2><p id="temperature" class="reading">—</p><small id="temperature-state"></small></div>
+      </div>
+      <div class="hero-footer">
+        <p id="comparison">어제 대비 · 비교 불가</p>
+        <a href="#data">Open-Meteo · 모델 기반 · KST ↘</a>
+      </div>
+    </section>
+    <section class="card" id="today-summary">
+      <h2>오늘 기록과 추천</h2>
+      <p id="storage-personal" class="caution" role="status" hidden>이 브라우저의 개인 저장소에 접근하지 못했어요. 기록을 읽거나 저장하지 못할 수 있어요.</p>
+      <p id="today-weather-summary" class="subtitle"></p>
+      <div id="today-periods" class="feature-grid"></div>
+    </section>
+    <div class="feature-grid">
+      <section id="skin" class="card">
+        <p class="eyebrow">02 / SKIN CHECK</p>
+        <h2>오늘 내 피부는?</h2>
+        <p class="subtitle">지금 느끼는 상태를 기록하세요. 입력은 이 브라우저에만 저장됩니다.</p>
+        <form id="skin-form">
+          <label>기록 시간 <select id="skin-time"><option value="morning">아침</option><option value="evening">저녁</option></select></label>
+          <p id="skin-period" class="subtitle"></p>
+          <div id="skin-fields"></div>
+          <details>
+            <summary>상세 기록 (선택)</summary>
+            <div class="product-fields">
+              <label>여드름 여부
+                <select name="acne"><option value="">선택 안 함</option><option>없음</option><option>있음</option></select>
+              </label>
+              <label id="acne-type-field" hidden>여드름 유형
+                <select name="acneType" disabled><option value="">유형 선택</option><option>화농성</option><option>좁쌀</option><option>둘 다</option></select>
+              </label>
+            </div>
+            <label>현재 따가움 <select name="stinging"><option value="">선택 안 함</option><option>없음</option><option>있음</option></select></label>
+            <p class="subtitle">부위별 피부 상태 (선택)</p>
+            <div id="zone-fields" class="product-fields"></div>
+          </details>
+          <button type="submit">오늘 상태 저장</button>
+          <button id="copy-yesterday" class="secondary" type="button">어제 상태 불러오기</button>
+          <p id="skin-feedback" role="status"></p>
+        </form>
+      </section>
+      <section id="routine" class="card routine">
+        <p class="eyebrow">03 / TODAY’S ROUTINE</p>
+        <h2>오늘의 스킨케어 제안</h2>
+        <div class="routine-controls">
+          <label>루틴 시간 <select id="routine-time"><option value="morning">아침</option><option value="evening">저녁</option></select></label>
+          <label id="evening-cleansing-field" hidden>저녁 세안 상황
+            <select id="evening-cleansing"><option value="">선택 안 함</option><option>맨얼굴</option><option>선크림·메이크업 사용</option></select>
+          </label>
+        </div>
+        <label>오늘 활동 환경 <select id="activity"><option value="">선택 안 함</option><option>외출하지 않음</option><option>실내 활동 위주</option><option>야외 활동 위주</option></select></label>
+        <label>외출 예정 시각 (KST, 선택) <input id="outing-time" type="time"></label>
+        <p id="outing-uv" class="subtitle"></p>
+        <p id="routine-message" role="status"></p>
+        <ol id="recommendations" class="product-list" role="list"></ol>
+        <section id="optional-care" hidden>
+          <h3>기능성 제품 · 선택적 집중 관리</h3>
+          <p>제품 사용 안내를 우선하세요. 평소 보습과 햇빛 노출에 맞춘 자외선 차단은 기본 루틴에서 확인할 수 있어요.</p>
+          <fieldset id="care-interests">
+            <legend>관심 있는 피부 고민 (선택)</legend>
+            <div class="purpose-options"></div>
+          </fieldset>
+          <p id="care-feedback" role="status"></p>
+          <ul id="optional-care-products" class="product-list"></ul>
+        </section>
+        <div class="usage-summary">
+          <span id="usage-count" aria-live="polite"></span>
+          <label><input type="checkbox" id="routine-complete"> 이 시간대의 루틴 기록 완료</label>
+        </div>
+        <details id="usage-panel">
+          <summary>실제 사용 제품 추가·취소</summary>
+          <label>다른 보유 제품 <select id="used-product"></select></label>
+          <button id="add-used-product" type="button" class="secondary">사용 기록에 추가</button>
+          <ul id="used-products" class="product-list"></ul>
+        </details>
+        <p id="usage-feedback" role="status"></p>
+        <p id="caution" class="caution" hidden></p>
+        <p class="subtitle">제품의 사용 안내와 평소 사용 경험을 함께 참고하세요.</p>
+      </section>
+    </div>
+    <section id="shelf" class="card">
+      <p class="eyebrow">04 / MY SHELF</p>
+      <h2>내 화장대</h2>
+      <p class="subtitle">실제로 갖고 있는 제품을 추가하세요.</p>
+      <form id="catalog-search">
+        <label for="catalog-query">제품명 또는 브랜드 검색</label>
+        <input id="catalog-query" type="search" maxlength="300" placeholder="예: 더랩바이블랑두, 유이크" list="catalog-suggestions">
+        <datalist id="catalog-suggestions"></datalist>
+        <button type="submit">제품 검색</button>
+        <p class="subtitle">쉼표로 여러 제품이나 브랜드를 검색할 수 있어요.</p>
+        <fieldset><legend>제품 카테고리 · 여러 개 선택</legend><div id="catalog-types" class="purpose-options"></div></fieldset>
+        <details id="catalog-filters">
+          <summary>검색 필터와 정렬</summary>
+          <div class="catalog-controls">
+            <label>브랜드 <select id="catalog-brand"><option value="">전체 브랜드</option></select></label>
+            <label>정렬 <select id="catalog-sort"><option value="relevance">관련도순</option><option value="brand">브랜드명순</option><option value="verified">전성분 확인 우선</option></select></label>
+            <label><input id="catalog-verified" type="checkbox"> 전성분 확인 제품만</label>
+          </div>
+        </details>
+        <p id="catalog-active" class="subtitle" hidden></p>
+        <button id="catalog-reset" type="button" class="secondary" hidden>검색 조건 초기화</button>
+        <p id="catalog-status" tabindex="-1" class="subtitle" role="status">제품명 일부를 입력해 보세요. 검색 결과에 전성분 확인 여부가 표시돼요.</p>
+        <div id="catalog-examples">
+          <p class="subtitle">추천 검색어</p>
+          <div id="catalog-example-buttons" class="purpose-options"></div>
+        </div>
+        <div id="catalog-page-actions" class="catalog-controls" hidden>
+          <button id="catalog-select-page" type="button" class="secondary">이 페이지 모두 선택</button>
+          <button id="catalog-clear" type="button" class="secondary">전체 선택 해제</button>
+        </div>
+        <button id="catalog-manual" type="button" class="secondary" hidden>검색어로 직접 등록</button>
+        <ul id="catalog-results" class="product-list"></ul>
+        <nav id="catalog-pages" aria-label="검색 결과 페이지" hidden>
+          <button id="catalog-previous" type="button" class="secondary">이전</button>
+          <span id="catalog-page-number" aria-live="polite"></span>
+          <button id="catalog-next" type="button" class="secondary">다음</button>
+        </nav>
+      </form>
+      <section id="bulk-shelf" hidden>
+        <h3 id="bulk-heading" tabindex="-1">한 번에 등록할 제품</h3>
+        <p class="subtitle">미확인 항목을 확인한 뒤 등록하세요. 필요하면 선택한 제품의 값을 일괄 지정할 수 있어요.</p>
+        <details>
+          <summary>종류와 사용 목적 일괄 지정</summary>
+          <div id="bulk-edits" class="catalog-controls"></div>
+          <button id="bulk-apply" type="button" class="secondary">선택 제품에 적용</button>
+        </details>
+        <ul id="bulk-products" class="product-list"></ul>
+        <p id="bulk-feedback" role="status" tabindex="-1"></p>
+        <button id="bulk-save" type="button">선택한 제품 등록</button>
+        <button id="bulk-ready-save" type="button" class="secondary" hidden>준비된 제품만 등록</button>
+      </section>
+      <div id="bulk-bar" class="bulk-bar" hidden>
+        <span id="bulk-count" aria-live="polite"></span>
+        <button id="bulk-review" type="button" class="secondary">선택 목록 보기</button>
+        <button id="bulk-quick-save" type="button">화장대에 추가</button>
+      </div>
+      <p id="bulk-result" role="status" tabindex="-1"></p>
+      <form id="product-form">
+        <details id="product-management">
+          <summary>개봉일과 사용 관리 (선택)</summary>
+          <div class="catalog-controls">
+            <label>개봉일 <input name="openedOn" type="date"></label>
+            <label>사용 시작일 <input name="startedOn" type="date"></label>
+            <label>사용 상태 <select name="useStatus"><option value="">선택 안 함</option><option value="using">사용 중</option><option value="paused">사용 중단</option></select></label>
+          </div>
+          <label>내 사용 주기 또는 메모 <input name="usagePlan" maxlength="240"></label>
+        </details>
+        <p id="catalog-source" class="subtitle" hidden></p>
+        <div class="product-fields">
+          <label>브랜드명<input name="brand" required maxlength="60"></label>
+          <label>제품명<input name="name" required maxlength="80"></label>
+          <label>종류<select name="type" required><option value="">종류 선택</option><option>클렌저</option><option>토너</option><option>앰플</option><option>세럼</option><option>크림</option><option>로션</option><option>선크림</option><option>기타</option></select></label>
+          <label id="cleanser-type-field" hidden>클렌저 세부 종류
+            <select name="cleanserType" disabled><option value="">미분류</option><option>약산성</option><option>약알칼리성</option><option>1차 세안제</option></select>
+          </label>
+          <label>내가 느낀 보습감<select name="moisture"><option value="">미입력</option><option>가벼움</option><option>보통</option><option>풍부함</option></select></label>
+          <label>민감한 날 사용 반응<select name="reaction"><option value="">아직 모르겠어요</option><option value="comfortable">잘 맞았어요</option><option value="irritated">따갑거나 붉어졌어요</option></select></label>
+          <label class="memo">이 제품에서 피하고 싶은 성분 <span>(선택)</span><input name="avoidIngredients" maxlength="400" placeholder="예: 향료, 레티놀"></label>
+          <label class="memo">주의사항 또는 메모 <span>(선택)</span><textarea name="note" maxlength="240" rows="2"></textarea></label>
+          <label class="memo">전성분 <span>(선택)</span><textarea name="ingredients" maxlength="12000" rows="4" placeholder="제품 라벨의 전성분을 쉼표나 줄바꿈으로 구분해 붙여넣으세요."></textarea></label>
+        </div>
+        <fieldset>
+          <legend>사용 목적 · 여러 개 선택</legend>
+          <div class="purpose-options">
+            <label><input type="checkbox" name="purposes" value="수분 공급"> 수분 공급</label>
+            <label><input type="checkbox" name="purposes" value="보습"> 보습</label>
+            <label><input type="checkbox" name="purposes" value="진정"> 진정</label>
+            <label><input type="checkbox" name="purposes" value="자외선 차단"> 자외선 차단</label>
+            <label><input type="checkbox" name="purposes" value="피부결 관리"> 피부결 관리</label>
+            <label><input type="checkbox" name="purposes" value="피부톤 관리"> 피부톤 관리</label>
+            <label><input type="checkbox" name="purposes" value="여드름 관리"> 여드름 관리</label>
+            <label><input type="checkbox" name="purposes" value="세정"> 세정</label>
+            <label><input type="checkbox" name="purposes" value="유분 관리"> 유분 관리</label>
+            <label><input type="checkbox" name="purposes" value="기타"> 기타</label>
+          </div>
+        </fieldset>
+        <p id="ingredient-preview" class="subtitle" role="status" hidden></p>
+        <details id="ingredient-preview-details" hidden>
+          <summary>성분별 역할과 주의 표시 보기</summary>
+          <ul class="ingredient-list"></ul>
+        </details>
+        <p class="subtitle">전성분에서 확인한 성분명은 제안에 참고합니다. 제품의 농도, 효과, 개인별 자극 여부는 성분명만으로 판단하기 어렵습니다.</p>
+        <label class="checkbox"><input type="checkbox" name="active"> 레티날·각질 관리 등 자극에 주의하는 제품</label>
+        <button id="product-save" type="submit">제품 등록</button>
+        <button id="product-cancel" type="button" class="secondary" hidden>수정 취소</button>
+        <p id="product-feedback" role="status"></p>
+      </form>
+      <p id="shelf-empty" class="subtitle">등록된 제품이 없습니다.</p>
+      <div id="products"></div>
+    </section>
+    <section id="journal" class="card">
+      <p class="eyebrow">05 / JOURNAL</p>
+      <h2>나의 기록</h2>
+      <h3 id="weather-history-title">도시별 기상 기록</h3>
+      <p id="empty" class="subtitle">저장된 기록이 없습니다.</p>
+      <div class="table-wrap">
+        <table id="history" aria-label="도시별 일별 기상 기록" hidden>
+          <thead><tr><th scope="col">KST 날짜</th><th scope="col">습도</th><th scope="col">UV</th><th scope="col">기온</th><th scope="col">모델 유효 시각</th><th scope="col">조회 시각</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <h3>내 피부와 제안 기록</h3>
+      <p id="skin-comparison" class="subtitle"></p>
+      <details id="reaction-panel">
+        <summary>어제 사용 후 반응 기록</summary>
+        <form id="reaction-form">
+          <label>어제 사용 시간대 <select name="period"><option value="morning">아침</option><option value="evening">저녁</option></select></label>
+          <p id="reaction-baseline"></p>
+          <label>제품 연결 (선택) <select name="product"></select></label>
+          <div id="reaction-fields" class="product-fields"></div>
+          <div class="purpose-options">
+            <label><input type="checkbox" name="signs" value="따가움"> 따가움</label>
+            <label><input type="checkbox" name="signs" value="붉어짐"> 붉어짐</label>
+            <label><input type="checkbox" name="signs" value="트러블"> 트러블</label>
+          </div>
+          <label>개인 메모 <textarea name="note" maxlength="500" rows="2"></textarea></label>
+          <p class="subtitle">여러 제품을 함께 쓴 경우, 기록만으로 어떤 제품이 변화의 원인인지 확인하기 어려워요.</p>
+          <button type="submit">반응 저장</button>
+          <button id="delete-reaction" type="button" class="secondary">저장한 반응 삭제</button>
+          <p id="reaction-feedback" role="status"></p>
+        </form>
+      </details>
+      <label>기록 달력 <input id="journal-month" type="month"></label>
+      <div id="journal-calendar" class="journal-calendar"></div>
+      <p id="journal-date-label" class="subtitle" aria-live="polite"></p>
+      <ul id="skin-history" class="product-list"></ul>
+      <details>
+        <summary>개인 기록 백업</summary>
+        <p>이 기기에 JSON 파일을 저장하거나 불러올 수 있어요. 같은 날짜와 같은 제품 ID의 기록은 현재 기록을 우선해요.</p>
+        <button id="export-personal" type="button" class="secondary">JSON 내보내기</button>
+        <label>JSON 가져오기 <input id="import-personal" type="file" accept=".json,application/json"></label>
+        <p id="backup-feedback" role="status"></p>
+      </details>
+      <button id="reset-personal" class="secondary" type="button">개인 입력 전체 초기화</button>
+      <p id="reset-feedback" class="subtitle" role="status"></p>
+      <h3>공개 검증 기록 · 대전</h3>
+      <p id="evidence-status" class="subtitle" role="status">공개 검증 기록을 불러오는 중입니다.</p>
+      <ul id="evidence-list" class="product-list"></ul>
+    </section>
+    <section id="skin-insights" class="card">
+      <h2>피부 변화와 주간 리포트</h2>
+      <p class="subtitle">KST 날짜 기준. 하루 두 번 기록하면 점수는 일평균으로, 붉은기는 한 번이라도 있으면 발생일로 집계해요.</p>
+      <div class="catalog-controls">
+        <label>기간 <select id="insight-range"><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="custom">기간 지정</option></select></label>
+        <span id="insight-custom" hidden><label>시작 <input id="insight-start" type="date"></label> <label>끝 <input id="insight-end" type="date"></label></span>
+      </div>
+      <p id="insight-status" role="status"></p>
+      <div id="insight-graphs"></div>
+      <details><summary>날짜별 날씨와 실제 사용 제품</summary>
+        <p class="subtitle">지역 기상 습도와 당시 기록을 함께 보여줘요. 함께 나타난 변화는 관찰 기록이에요.</p>
+        <ul id="insight-days" class="product-list"></ul>
+      </details>
+      <details><summary>제품별 사용과 다음 날 반응</summary>
+        <label>제품 <select id="insight-product"></select></label>
+        <p id="insight-product-summary" class="subtitle"></p>
+        <ul id="insight-uses" class="product-list"></ul>
+      </details>
+      <h3>주간 스킨케어 리포트</h3>
+      <div id="weekly-report"></div>
+    </section>
+    <section id="data" class="card">
+      <p class="eyebrow">06 / SOURCE &amp; STATUS</p>
+      <div class="topline"><h2>데이터 상세 및 상태</h2><span id="status" class="badge">조회 준비</span></div>
+      <p id="message" role="status"></p>
+      <dl>
+        <dt>출처</dt><dd>Open-Meteo · <a id="source" rel="noreferrer">조회 API</a></dd>
+        <dt>표시값 원천 URL</dt><dd><a id="record-source" rel="noreferrer">—</a></dd>
+        <dt>모델 데이터 유효 시각</dt><dd id="source-time">—</dd>
+        <dt>마지막 정상 조회 시각</dt><dd id="retrieved-time">—</dd>
+        <dt>기준 시간대</dt><dd>Asia/Seoul (KST)</dd>
+      </dl>
+      <details>
+        <summary>오늘 시간대별 UV 예보 (KST)</summary>
+        <p id="uv-forecast-status" class="subtitle"></p>
+        <ul id="uv-forecast" class="uv-forecast"></ul>
+      </details>
+      <button id="refresh" type="button">날씨 조회</button>
+      <p id="storage-message" role="status" hidden></p>
+    </section>
+  </main>
+  <script>
+    if (location.protocol === 'file:') {
+      const appUrl = new URL('http://127.0.0.1:8000/');
+      appUrl.hash = location.hash || 'shelf';
+      const openApp = document.getElementById('open-local-app');
+      openApp.href = appUrl.href;
+      document.getElementById('file-help').hidden = false;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 1500);
+      fetch(appUrl, { mode: 'no-cors', cache: 'no-store', signal: controller.signal })
+        .then(() => location.replace(appUrl.href))
+        .catch(() => {})
+        .finally(() => clearTimeout(timeout));
+    } else {
+      import('./app.js?view=functional-care')
+        .then(() => {
+          document.getElementById('dashboard').hidden = false;
+          if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();
+        })
+        .catch(() => { document.getElementById('app-start-error').hidden = false; });
+    }
+  </script>
+</body>
+</html>

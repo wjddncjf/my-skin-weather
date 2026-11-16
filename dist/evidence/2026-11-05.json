@@ -1,0 +1,37 @@
+{
+  "record": {
+    "day": "2026-11-05",
+    "humidity": 96,
+    "unit": "%",
+    "source": "Open-Meteo",
+    "sourceUrl": "https://api.open-meteo.com/v1/forecast?latitude=36.3504&longitude=127.3845&current=relative_humidity_2m%2Ctemperature_2m%2Cuv_index&timezone=Asia%2FSeoul&timeformat=unixtime",
+    "timezone": "Asia/Seoul",
+    "temperature": 11.9,
+    "uv": 0.25,
+    "sourceTime": "2026-11-05T02:30:00.000Z",
+    "retrievedAt": "2026-11-05T02:38:59.520Z"
+  },
+  "raw": {
+    "latitude": 36.35,
+    "longitude": 127.375,
+    "generationtime_ms": 0.06389617919921875,
+    "utc_offset_seconds": 32400,
+    "timezone": "Asia/Seoul",
+    "timezone_abbreviation": "GMT+9",
+    "elevation": 59,
+    "current_units": {
+      "time": "unixtime",
+      "interval": "seconds",
+      "relative_humidity_2m": "%",
+      "temperature_2m": "°C",
+      "uv_index": ""
+    },
+    "current": {
+      "time": 1793845800,
+      "interval": 900,
+      "relative_humidity_2m": 96,
+      "temperature_2m": 11.9,
+      "uv_index": 0.25
+    }
+  }
+}
