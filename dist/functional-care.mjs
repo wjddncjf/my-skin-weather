@@ -61,6 +61,26 @@ function combination(profile, families) {
   return profile.tracked.length > 0 && families.some(family => trackedFamilies.has(family));
 }
 
+function nextCycleCheck({ status, last, schedule, days, weekly, recentCount }) {
+  if (status === 'hold') return { date: null, message: '사용 보류 · 제품 상태와 피부 반응을 확인해 주세요.' };
+  if (schedule === 'custom' && (!Number.isInteger(days) || days < 1 || days > 365)) {
+    return { date: null, message: '잘못된 설정 · 직접 지정 간격은 1~365일로 입력해 주세요.' };
+  }
+  if (weekly > 1) {
+    const usage = last ? '최근 7일 중 ' + recentCount + '일 사용' : '사용 기록 없음';
+    return { date: null, message: schedules[schedule] + ' 설정 · ' + usage };
+  }
+  if (!last) return { date: null, message: '사용 기록 없음' };
+  const interval = weekly === 1 ? 7 : days;
+  if (!interval) return { date: null, message: '사용 주기 미설정' };
+
+  // The journal keys are KST calendar dates. Use UTC fields for calendar arithmetic.
+  const date = new Date(last);
+  if (!Number.isFinite(date.getTime())) return { date: null, message: '마지막 사용 날짜를 확인해 주세요.' };
+  date.setUTCDate(date.getUTCDate() + interval);
+  return { date: date.toISOString().slice(0, 10), message: '설정한 주기를 확인하는 참고 날짜예요. 제품 안내와 피부 반응을 함께 확인해 주세요.' };
+}
+
 export function evaluateFunctionalCare(products, { day, period, skin, interests, journal, flagged, excluded = new Set(), routineProducts = [] }) {
   const use = functionalUsage(journal, products).filter(entry => entry.day <= day);
   const concernsToday = relevantConcerns(skin, interests);
@@ -125,8 +145,10 @@ export function evaluateFunctionalCare(products, { day, period, skin, interests,
       status = 'candidate'; reason = '현재 피부 기록과 설정한 주기를 확인했어요. ' + matches.join('·') + ' 목적의 선택 후보예요.';
       selectedTracked ||= tracked.length > 0;
     }
-    cards.push({ product, ...profile, status, reason, last, first, recentCount: recentDates.size,
-      relatedLast: related[0], history, conflict, lastReaction });
+    const recentCount = recentDates.size;
+    const nextCheck = nextCycleCheck({ status, last, schedule: settings.schedule, days, weekly, recentCount });
+    cards.push({ product, ...profile, status, reason, last, first, recentCount,
+      relatedLast: related[0], history, conflict, lastReaction, nextCheck });
   }
   return cards;
 }

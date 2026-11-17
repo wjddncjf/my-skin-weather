@@ -1,4 +1,4 @@
-import { adaptations, concerns, evaluateFunctionalCare, functionalProfile, schedules, statuses } from './functional-care.mjs';
+import { adaptations, concerns, evaluateFunctionalCare, functionalProfile, schedules, statuses } from './functional-care.mjs?view=cycle-check';
 import { dailyRecords, irritationHistory, metrics, offsetDay, weeklyReport } from './skin-insights.mjs';
 import { mergePersonalBackup } from './personal-backup.mjs';
 import { dayKey, isFreshWeather, previousDay } from './weather.mjs?view=usage-journal';
@@ -539,7 +539,7 @@ function renderCareSettings(card, oldForm) {
 }
 
 function renderCareCard(card, oldForm) {
-  const { product, settings, ingredients, families, status, reason, first, last, relatedLast, lastReaction } = card;
+  const { product, settings, ingredients, families, status, reason, first, last, relatedLast, lastReaction, nextCheck } = card;
   const item = element('li');
   item.append(element('strong', nameOf(product)), element('p', statuses[status], 'care-status care-' + status),
     element('p', reason));
@@ -553,6 +553,15 @@ function renderCareCard(card, oldForm) {
   item.append(element('p', ['첫 사용 ' + (firstDate ?? '기록 없음'), '마지막 사용 ' + (last ?? '기록 없음'),
     interval ?? '주기 미설정', '최근 7일 사용 ' + card.recentCount + '일',
     adaptations[settings.adaptation]].filter(Boolean).join(' · '), 'subtitle'));
+  const check = element('p', '다음 주기 확인 · ', 'subtitle');
+  if (nextCheck.date) {
+    const date = element('time', nextCheck.date);
+    date.dateTime = nextCheck.date;
+    check.textContent = '다음 주기 확인일 · ';
+    check.append(date, ' · ');
+  }
+  check.append(nextCheck.message);
+  item.append(check);
   const roles = {
     '레티노이드': '피부결 관리', '비타민 C': '피부톤 관리', AHA: '각질 관리', BHA: '각질·유분 관리', '기타': '피부톤·장벽 관리'
   };
