@@ -325,7 +325,7 @@
         .catch(() => {})
         .finally(() => clearTimeout(timeout));
     } else {
-      import('./app.js?view=cycle-check')
+      import('./app.js?view=cycle-accessibility')
         .then(() => {
           document.getElementById('dashboard').hidden = false;
           if (location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView();

@@ -528,10 +528,15 @@ function renderCareSettings(card, oldForm) {
     if (values.has('days')) functionalCare.days = Number(values.get('days'));
     const products = data.products.map(item => item.id === product.id ? { ...item, functionalCare } : item);
     if (!save({ ...data, products }, 'care-feedback')) return;
-    byId('care-feedback').textContent = nameOf(product) + '의 집중 관리 설정을 저장했어요.';
     refreshSavedPicks();
     renderRoutine();
     renderProducts();
+    const result = details.closest('li');
+    const status = result.querySelector('.care-status').textContent;
+    const checkElement = result.querySelector('.care-check');
+    const time = checkElement.querySelector('time');
+    const check = time ? checkElement.textContent.replace(time.textContent, time.getAttribute('aria-label')) : checkElement.textContent;
+    byId('care-feedback').textContent = nameOf(product) + '의 집중 관리 설정을 저장했어요. ' + status + '. ' + check;
     details.querySelector('summary').focus();
   });
   details.append(element('summary', '사용 주기·적응 상태 설정'), form);
@@ -541,8 +546,9 @@ function renderCareSettings(card, oldForm) {
 function renderCareCard(card, oldForm) {
   const { product, settings, ingredients, families, status, reason, first, last, relatedLast, lastReaction, nextCheck } = card;
   const item = element('li');
-  item.append(element('strong', nameOf(product)), element('p', statuses[status], 'care-status care-' + status),
-    element('p', reason));
+  const statusLabel = element('p', '', 'care-status care-' + status);
+  statusLabel.append(element('span', '제품 사용 판정: ', 'visually-hidden'), statuses[status]);
+  item.append(element('strong', nameOf(product)), statusLabel, element('p', reason));
   if (ingredients.length) item.append(element('p', '전성분에서 확인 · ' + ingredients.map(entry =>
     entry.family + ' ' + entry.name + (entry.family === '비타민 C' ? ' (' + entry.form + ')' : '') +
     (entry.concentration ? ' ' + entry.concentration : ' (농도 미표기)')).join(' / '), 'subtitle'));
@@ -553,10 +559,12 @@ function renderCareCard(card, oldForm) {
   item.append(element('p', ['첫 사용 ' + (firstDate ?? '기록 없음'), '마지막 사용 ' + (last ?? '기록 없음'),
     interval ?? '주기 미설정', '최근 7일 사용 ' + card.recentCount + '일',
     adaptations[settings.adaptation]].filter(Boolean).join(' · '), 'subtitle'));
-  const check = element('p', '다음 주기 확인 · ', 'subtitle');
+  const check = element('p', '다음 주기 확인 · ', 'subtitle care-check');
   if (nextCheck.date) {
     const date = element('time', nextCheck.date);
     date.dateTime = nextCheck.date;
+    const [year, month, day] = nextCheck.date.split('-').map(Number);
+    date.setAttribute('aria-label', `${year}년 ${month}월 ${day}일`);
     check.textContent = '다음 주기 확인일 · ';
     check.append(date, ' · ');
   }

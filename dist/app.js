@@ -1,5 +1,5 @@
 import { cities, citySourceUrl, dayKey, previousDay, isFreshWeather, fetchWeather, sourceUrl, timezone } from './weather.mjs?view=usage-journal';
-import { updatePersonalWeather } from './personal.mjs?view=cycle-check';
+import { updatePersonalWeather } from './personal.mjs?view=cycle-accessibility';
 
 const recordPrefix = city => 'my-skin-weather:' + city + ':v1:';
 const errors = {
